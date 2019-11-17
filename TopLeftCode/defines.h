@@ -29,7 +29,7 @@
 #define LED_PIN 50
 
 #define MIN_VOLUME 0
-#define MAX_VOLUME 20
+#define MAX_VOLUME 18
 #define INIT_VOL 2
 #define NUMPIXELS      60
 #define MIN_PRESSURE 300
@@ -120,4 +120,3 @@ class MP3RGB {
     bool fwd;
 
 };
-

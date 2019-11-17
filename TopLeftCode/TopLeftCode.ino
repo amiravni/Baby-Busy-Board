@@ -31,6 +31,7 @@ int vol = INIT_VOL;
 int lastVol = INIT_VOL;
 int fileName = 1;
 bool tmp_busyFlag = false;
+bool servoUp = false;
 int buttons_pinsVec [NUM_OF_BUTTONS] = BUTTON_PIN_VEC;
 int switches_pinsVec [NUM_OF_SWITCHES] = SWITCHES_PIN_VEC;
 int bias = 0;
@@ -115,6 +116,11 @@ void loop()
   int pressVal = analogRead(PRESSURE_PIN);
   int servoVal = map(min(max(pressVal, MIN_PRESSURE), MAX_PRESSURE), MIN_PRESSURE, MAX_PRESSURE, 20, 180);
   int pressVal_led = map(min(max(pressVal, MIN_PRESSURE), MAX_PRESSURE), MIN_PRESSURE, MAX_PRESSURE, 0, 12);
+  
+  //PRINTLNDEBUG(servoVal);
+
+  if (servoVal < 120) servoUp = true;
+  else servoUp = false;
 
   myservo.write(servoVal);
   if (lastServoVal != servoVal) {
@@ -127,6 +133,8 @@ void loop()
   else {
     delay(1);
   }
+
+  if (servoUp) return;
 
   // MP3Player - Handle buttons and volume
   if (!mp3_rgb.mp3_on) { // (digitalRead(BUSY_PIN)) { // MP3 Player is not playing
@@ -147,29 +155,30 @@ void loop()
   //delay(100);
 
   //vol = (MAX_VOLUME + 1) - map(analogRead(VOL_PIN), 0, 840, MIN_VOLUME, MAX_VOLUME);
-  int volTmp = analogRead(VOL_PIN);
-  vol = min(MAX_VOLUME, ((5 * volTmp) / (1024 - volTmp )));
-  if (vol != lastVol && abs(vol - lastVol) > 1 ) {
-    PRINTDEBUG("Volume... ");
-    PRINTLNDEBUG(vol);
-    PRINTLNDEBUG(analogRead(VOL_PIN));
-    myDFPlayer.volume(vol);
-    lastVol = vol;
-
-    int vol2led = map(vol, MIN_VOLUME, MAX_VOLUME, 0, RIGHTLEDS_E - RIGHTLEDS_S);
-
-    for (int iii = RIGHTLEDS_S; iii <= RIGHTLEDS_E; iii++) {
-      if (iii <= (RIGHTLEDS_S + vol2led)) {
-        if (bias == 0) pixels.setPixelColor(iii, pixels.Color(0, 50, 0));
-        else if (bias == 10) pixels.setPixelColor(iii, pixels.Color(50, 0, 0));
+  if (!servoUp) {
+      int volTmp = analogRead(VOL_PIN);
+      vol = min(MAX_VOLUME, ((5 * volTmp) / (1024 - volTmp )));
+      if (vol != lastVol && abs(vol - lastVol) > 1 ) {
+        PRINTDEBUG("Volume... ");
+        PRINTLNDEBUG(vol);
+        PRINTLNDEBUG(analogRead(VOL_PIN));
+        myDFPlayer.volume(vol);
+        lastVol = vol;
+    
+        int vol2led = map(vol, MIN_VOLUME, MAX_VOLUME, 0, RIGHTLEDS_E - RIGHTLEDS_S);
+    
+        for (int iii = RIGHTLEDS_S; iii <= RIGHTLEDS_E; iii++) {
+          if (iii <= (RIGHTLEDS_S + vol2led)) {
+            if (bias == 0) pixels.setPixelColor(iii, pixels.Color(0, 50, 0));
+            else if (bias == 10) pixels.setPixelColor(iii, pixels.Color(50, 0, 0));
+          }
+          else  pixels.setPixelColor(iii, pixels.Color(0, 0, 0));
+        }
+        pixels.show(); // This sends the updated pixel color to the hardware.
+        lastUpdated = millis();
+    
       }
-      else  pixels.setPixelColor(iii, pixels.Color(0, 0, 0));
-    }
-    pixels.show(); // This sends the updated pixel color to the hardware.
-    lastUpdated = millis();
-
   }
-
   // update strip if sound is working
   if (mp3_rgb.mp3_on) {
     mp3_rgb.updateStrip(&pixels);
